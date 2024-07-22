@@ -1,4 +1,5 @@
 # TravelMate
+User-Based Jeju Island Travel Destination Recommendation System
 
 # Abstract
 In an era where personalized experiences are highly valued, the travel industry is evolving to meet the diverse needs and preferences of travelers. This is particularly true for destinations like Jeju Island, renowned for its unique blend of natural beauty, cultural heritage, and recreational opportunities. To enhance the travel experience and provide tailored recommendations, we propose the development of an AI-driven machine learning program designed to suggest optimal travel destinations in Jeju Island based on individual user preferences and objectives.
