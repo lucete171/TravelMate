@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "251484628717",
+    "firebase_url": "https://example-376c0-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "example-376c0",
+    "storage_bucket": "example-376c0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251484628717:android:cf08ace390cdf55c8e4ee4",
+        "android_client_info": {
+          "package_name": "com.example.classic_sound"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBghl6icUG7L0MXCuYW0vtUJqK_Eaw05tM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251484628717:android:8799367418ce4a558e4ee4",
+        "android_client_info": {
+          "package_name": "com.example.dqwdqwf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBghl6icUG7L0MXCuYW0vtUJqK_Eaw05tM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251484628717:android:c9b6d6fd77d9f71f8e4ee4",
+        "android_client_info": {
+          "package_name": "com.example.travel_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBghl6icUG7L0MXCuYW0vtUJqK_Eaw05tM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
