@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:water_drop_nav_bar/water_drop_nav_bar.dart';
 
 import 'favorite.dart';
-import '../nav_pages.dart/profile.dart';
 import 'mail.dart';
 import '../pages/home_page.dart';
+import '../pages/google_map.dart';
+import '../nav_pages.dart/route_page.dart';
 
 class MainWrapper extends StatefulWidget {
   const MainWrapper({super.key});
@@ -16,11 +17,11 @@ class MainWrapper extends StatefulWidget {
 class _MainWrapperState extends State<MainWrapper> {
   late final PageController pageController;
   int currentIndex = 0;
-  List<Widget> pages = const [
+  List<Widget> pages = [
     HomePage(),
-    Bar(),
-    Mail(),
-    Profile(),
+    FavoritePage(),
+    SavedRoutesPage(),
+    GoogleMapPage(),
   ];
 
   @override
@@ -68,9 +69,9 @@ class _MainWrapperState extends State<MainWrapper> {
               filledIcon: Icons.favorite_rounded,
               outlinedIcon: Icons.favorite_border_rounded),
           BarItem(
-              filledIcon: Icons.mail,
-              outlinedIcon: Icons.mail_outline_outlined),
-          BarItem(filledIcon: Icons.people, outlinedIcon: Icons.people_outline),
+              filledIcon: Icons.route,
+              outlinedIcon: Icons.route_outlined),
+          BarItem(filledIcon: Icons.map, outlinedIcon: Icons.map_outlined),
         ],
       ),
     ));

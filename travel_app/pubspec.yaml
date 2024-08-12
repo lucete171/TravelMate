@@ -12,6 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  google_maps_flutter: ^2.7.0
+  location: ^4.4.0
+  flutter_typeahead: ^4.0.0
   cupertino_icons: ^1.0.2
   animate_do: ^3.0.2
   shape_of_view_null_safe: ^2.0.0
@@ -40,7 +43,8 @@ dependencies:
   table_calendar: ^3.0.0
   file_picker: ^8.0.6
   http: ^1.2.2
-
+  path_provider: ^2.1.4
+  url_launcher: ^6.0.20
 
 
 dev_dependencies:
@@ -57,7 +61,6 @@ flutter_icons:
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/images/
     - assets/animation/

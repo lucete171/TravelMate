@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Need access to read and write files</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Need access to add files</string>
+    <key>GMSApiKey</key>
+    <string>AIzaSyBEDOjx-flm23wa6tL5YFFWdNOLBqHzTNo</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -47,5 +53,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+</dict>
+<key>io.flutter.embedded_views_preview</key>
+<true/>
+<key>NSAppTransportSecurity</key>
+<dict>
+  <key>NSAllowsArbitraryLoads</key>
+  <true/>
 </dict>
 </plist>

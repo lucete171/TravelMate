@@ -4,6 +4,9 @@ import '../view/setting/setting_page.dart';
 import '../pages/calender.dart';
 import '../data/upload.dart';
 import '../pages/ai_recommend.dart';
+import '../pages/Top5PlacesPage.dart';
+import '../pages/google_map.dart';
+import '../pages/mypage.dart';
 
 class DrawerMenu extends StatelessWidget {
   const DrawerMenu({Key? key}) : super(key: key);
@@ -30,7 +33,7 @@ class DrawerMenu extends StatelessWidget {
             leading: const Icon(Icons.home),
             title: const Text('My'),
             onTap: () {
-              //my page
+              Get.to(MyPage());
             },
           ),
           ListTile(

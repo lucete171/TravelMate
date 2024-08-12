@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:lottie/lottie.dart';
+import 'package:intl/intl.dart';
+import 'travel_mission_priority_page.dart';
+import 'travel_motive_page.dart';
+import 'travel_styl1_page.dart';
+import 'travel_styl5_page.dart';
+import 'travel_styl6_page.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'Top5PlacesPage.dart';
 
 class InputForm extends StatefulWidget {
   @override
@@ -14,82 +24,94 @@ class _InputFormState extends State<InputForm> {
   String? travelStyl5;
   String? travelStyl6;
 
+  String? travelMissionPriorityText;
+  String? travelMotive1Text;
+  String? travelStyl1Text;
+  String? travelStyl5Text;
+  String? travelStyl6Text;
 
-  final List<String> travelMissionPriorities = [
-    '쇼핑',
-    '테마파크/놀이시설',
-    '역사 유적지방문',
-    '시티투어',
-    '야외스포츠,레포츠',
-    '지역 문화예술/공연/전시',
-    '유흥/오락',
-    '캠핑',
-    '지역 축제/이벤트 참가',
-    '온천/스파',
-    '교육/체험 프로그램 참여',
-    '드라마 촬영지 방문',
-    '종교/성지 순례',
-    'Well-ness여행',
-    'SNS인생샷 여행',
-    '호캉스여행',
-    '신규 여행지 발굴',
-    '반려동물 동반 여행',
-    '인플루언서 따라하기',
-    '친환경 여행',
-    '등반 여행'
-  ];
+  DateTime? departureDate;
+  DateTime? returnDate;
+  Duration? travelDuration;
 
-  final List<String> travelMotiveOptions = [
-    '일상적인 환경',
-    '쉴 수 있는 기회',
-    '여행 동반자와 친밀',
-    '진정한 자아 찾기',
-    'SNS 사진 등록',
-    '운동, 건강증진',
-    '새로운 경험 추구',
-    '역사탐방,문화적 경험',
-    '특별한 목적',
-    '기타'
-  ];
+  bool _isAnimating = false;
 
-  final List<Map<String, String>> travelStyl1Options = [
-    {'value': '1', 'label': '자연 매우 선호'},
-    {'value': '2', 'label': '자연 선호'},
-    {'value': '3', 'label': '자연 약간 선호'},
-    {'value': '4', 'label': '중립'},
-    {'value': '5', 'label': '도시 약간 선호'},
-    {'value': '6', 'label': '도시 선호'},
-    {'value': '7', 'label': '도시 매우 선호'},
-  ];
+  final Map<String, String> travelStyl1Map = {
+    '1': '자연 매우 선호',
+    '2': '자연 선호',
+    '3': '자연 약간 선호',
+    '4': '중립',
+    '5': '도시 약간 선호',
+    '6': '도시 선호',
+    '7': '도시 매우 선호',
+  };
 
-  final List<Map<String, String>> travelStyl5Options = [
-    {'value': '1', 'label': '휴양 매우 선호'},
-    {'value': '2', 'label': '휴양 선호'},
-    {'value': '3', 'label': '휴양 약간 선호'},
-    {'value': '4', 'label': '중립'},
-    {'value': '5', 'label': '체험 약간 선호'},
-    {'value': '6', 'label': '체험 선호'},
-    {'value': '7', 'label': '체험 매우 선호'},
-  ];
+  final Map<String, String> travelStyl5Map = {
+    '1': '휴양 매우 선호',
+    '2': '휴양 선호',
+    '3': '휴양 약간 선호',
+    '4': '중립',
+    '5': '체험 약간 선호',
+    '6': '체험 선호',
+    '7': '체험 매우 선호',
+  };
 
-  final List<Map<String, String>> travelStyl6Options = [
-    {'value': '1', 'label': '잘 알려지지 않은 곳 매우 선호'},
-    {'value': '2', 'label': '잘 알려지지 않은 곳 선호'},
-    {'value': '3', 'label': '잘 알려지지 않은 곳 약간 선호'},
-    {'value': '4', 'label': '중립'},
-    {'value': '5', 'label': '유명한 곳 약간 선호'},
-    {'value': '6', 'label': '유명한 곳 선호'},
-    {'value': '7', 'label': '유명한 곳 매우 선호'},
-  ];
+  final Map<String, String> travelStyl6Map = {
+    '1': '잘 알려지지 않은 곳 매우 선호',
+    '2': '잘 알려지지 않은 곳 선호',
+    '3': '잘 알려지지 않은 곳 약간 선호',
+    '4': '중립',
+    '5': '유명한 곳 약간 선호',
+    '6': '유명한 곳 선호',
+    '7': '유명한 곳 매우 선호',
+  };
+
+  Future<void> saveJsonToFile(Map<String, dynamic> jsonData) async {
+    // 앱의 문서 디렉토리 경로를 가져옵니다.
+    final directory = await getApplicationDocumentsDirectory();
+    final path = '${directory.path}/travel_data.json';
+
+    // 파일을 생성하고 JSON 데이터를 문자열로 변환하여 저장합니다.
+    final file = File(path);
+    final jsonString = jsonEncode(jsonData);
+    await file.writeAsString(jsonString);
+
+    print('JSON data saved to: $path');
+  }
+
+  Future<String> readJsonFromFile() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final path = '${directory.path}/travel_data.json';
+      final file = File(path);
+
+      if (await file.exists()) {
+        final contents = await file.readAsString();
+        return contents;
+      } else {
+        return 'File not found';
+      }
+    } catch (e) {
+      return 'Error reading file: $e';
+    }
+  }
+
+  List<Place> parsePlacesFromJson(Map<String, dynamic> jsonData, String category) {
+    final List<dynamic> placesJson = jsonData[category];
+    return placesJson.map((json) => Place.fromJson(json)).toList();
+  }
 
   Future<void> sendData() async {
-    final String url = 'https://d95c-35-197-154-244.ngrok-free.app/receive_data'; // 서버 URL을 입력하세요.
+    final String url = 'https://ec62-34-31-67-62.ngrok-free.app/list_recommend'; // 서버 URL을 입력하세요.
     final Map<String, dynamic> data = {
       'TRAVEL_MISSION_PRIORITY': travelMissionPriority,
       'TRAVEL_STYL_1': travelStyl1,
       'TRAVEL_STYL_5': travelStyl5,
       'TRAVEL_STYL_6': travelStyl6,
       'TRAVEL_MOTIVE_1': travelMotive1,
+      'DEPARTURE_DATE': departureDate?.toIso8601String(),
+      'RETURN_DATE': returnDate?.toIso8601String(),
+      'TRAVEL_DURATION': travelDuration?.inDays,
     };
 
     final response = await http.post(
@@ -99,104 +121,213 @@ class _InputFormState extends State<InputForm> {
     );
 
     if (response.statusCode == 200) {
-      print('Data sent successfully');
+      // JSON 디코딩
+      final jsonResponse = jsonDecode(response.body);
+
+      List<Place> restaurants = parsePlacesFromJson(jsonResponse, '식당');
+      List<Place> cafes = parsePlacesFromJson(jsonResponse, '카페');
+      List<Place> touristAttractions = parsePlacesFromJson(jsonResponse, '여행지');
+      List<Place> accommodations = parsePlacesFromJson(jsonResponse, '호텔');
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Top5PlacesPage(
+            top5Data: {
+              '식당': restaurants,
+              '카페': cafes,
+              '여행지': touristAttractions,
+              '숙소': accommodations,
+            },
+          ),
+        ),
+      );
     } else {
-      print('Failed to send data');
+      print('Failed to fetch data');
+      print('Error response from server: ${response.body}');
     }
+  }
+
+  void _navigateAndSave(BuildContext context, Widget page, String featureName) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+    setState(() {
+      switch (featureName) {
+        case 'travelMissionPriority':
+          travelMissionPriority = result['value'];
+          travelMissionPriorityText = result['text'];
+          break;
+        case 'travelMotive1':
+          travelMotive1 = result['value'];
+          travelMotive1Text = result['text'];
+          break;
+        case 'travelStyl1':
+          travelStyl1 = result['value'];
+          travelStyl1Text = result['text'];
+          break;
+        case 'travelStyl5':
+          travelStyl5 = result['value'];
+          travelStyl5Text = result['text'];
+          break;
+        case 'travelStyl6':
+          travelStyl6 = result['value'];
+          travelStyl6Text = result['text'];
+          break;
+      }
+    });
+  }
+
+  void _playAnimation() {
+    setState(() {
+      _isAnimating = true;
+    });
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isDeparture) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isDeparture ? departureDate ?? DateTime.now() : returnDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != (isDeparture ? departureDate : returnDate))
+      setState(() {
+        if (isDeparture) {
+          departureDate = picked;
+          if (returnDate != null && picked.isAfter(returnDate!)) {
+            returnDate = null;
+            travelDuration = null;
+          }
+        } else {
+          returnDate = picked;
+          if (departureDate != null) {
+            travelDuration = returnDate!.difference(departureDate!);
+          }
+        }
+      });
   }
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: Text('AI 추천 받기'),
+        backgroundColor: Colors.deepPurpleAccent,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      backgroundColor: Color(0xFFEDE7F6),
+      body: Center(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: '여행 목적'),
-                value: travelMissionPriority,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    travelMissionPriority = newValue;
-                  });
-                },
-                items: travelMissionPriorities.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: '여행 동기'),
-                value: travelMotive1,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    travelMotive1 = newValue;
-                  });
-                },
-                items: travelMotiveOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: '자연 VS 도시'),
-                value: travelStyl1,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    travelStyl1 = newValue;
-                  });
-                },
-                items: travelStyl1Options.map<DropdownMenuItem<String>>((Map<String, String> option) {
-                  return DropdownMenuItem<String>(
-                    value: option['value'],
-                    child: Text(option['label']!),
-                  );
-                }).toList(),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: '휴식 VS 체험'),
-                value: travelStyl5,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    travelStyl5 = newValue;
-                  });
-                },
-                items: travelStyl5Options.map<DropdownMenuItem<String>>((Map<String, String> option) {
-                  return DropdownMenuItem<String>(
-                    value: option['value'],
-                    child: Text(option['label']!),
-                  );
-                }).toList(),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: '유명한 VS 특별한'),
-                value: travelStyl6,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    travelStyl6 = newValue;
-                  });
-                },
-                items: travelStyl6Options.map<DropdownMenuItem<String>>((Map<String, String> option) {
-                  return DropdownMenuItem<String>(
-                    value: option['value'],
-                    child: Text(option['label']!),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: sendData,
-                child: Text('추천받기'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(8.0), // 패딩을 줄여서 공간 확보
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _buildElevatedButton(context, '여행 목적 선택', travelMissionPriorityText, () {
+                  _navigateAndSave(context, TravelMissionPriorityPage(), 'travelMissionPriority');
+                }, travelMissionPriority != null),
+                if (travelMissionPriority != null)
+                  _buildElevatedButton(context, '여행 동기 선택', travelMotive1Text, () {
+                    _navigateAndSave(context, TravelMotivePage(), 'travelMotive1');
+                  }, travelMotive1 != null),
+                if (travelMotive1 != null)
+                  _buildElevatedButton(context, '자연 VS 도시 선택', travelStyl1Text, () {
+                    _navigateAndSave(context, TravelStyl1Page(), 'travelStyl1');
+                  }, travelStyl1 != null),
+                if (travelStyl1 != null)
+                  _buildElevatedButton(context, '휴식 VS 체험 선택', travelStyl5Text, () {
+                    _navigateAndSave(context, TravelStyl5Page(), 'travelStyl5');
+                  }, travelStyl5 != null),
+                if (travelStyl5 != null)
+                  _buildElevatedButton(context, '유명한 VS 특별한 선택', travelStyl6Text, () {
+                    _navigateAndSave(context, TravelStyl6Page(), 'travelStyl6');
+                  }, travelStyl6 != null),
+                if (travelStyl6 != null) ...[
+                  _buildDateButton(context, '출발 일시 선택', departureDate, () => _selectDate(context, true)),
+                  _buildDateButton(context, '도착 일시 선택', returnDate, () => _selectDate(context, false)),
+                  if (departureDate != null && returnDate != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          sendData();
+                          _playAnimation();
+                        },
+                        child: Text(
+                          '추천받기',
+                          style: TextStyle(color: Colors.white), // 글자 색 흰색으로 설정
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purpleAccent,
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          textStyle: TextStyle(fontSize: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+                if (_isAnimating)
+                  Container(
+                    width: size.width * 0.6, // 애니메이션 크기 조정
+                    height: size.width * 0.6,
+                    child: Lottie.asset('assets/animation/ai_robot.json'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildElevatedButton(BuildContext context, String defaultText, String? selectedText, VoidCallback onPressed, bool isSelected) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0), // 패딩을 줄여서 공간 확보
+      child: Center(
+        child: ElevatedButton(
+          onPressed: onPressed,
+          child: Text(
+            selectedText ?? defaultText,
+            style: TextStyle(fontSize: 16), // 글자 크기 줄임
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected ? Colors.deepPurpleAccent : Colors.white,
+            foregroundColor: isSelected ? Colors.white : Colors.deepPurpleAccent,
+            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15), // 버튼 크기 줄임
+            textStyle: TextStyle(fontSize: 16),
+            side: BorderSide(color: Colors.deepPurpleAccent, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateButton(BuildContext context, String text, DateTime? date, VoidCallback onPressed) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0), // 패딩을 줄여서 공간 확보
+      child: Center(
+        child: ElevatedButton(
+          onPressed: onPressed,
+          child: Text(
+            date != null ? DateFormat('yyyy-MM-dd').format(date) : text,
+            style: TextStyle(fontSize: 16), // 글자 크기 줄임
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: date != null ? Colors.deepPurpleAccent : Colors.white,
+            foregroundColor: date != null ? Colors.white : Colors.deepPurpleAccent,
+            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15), // 버튼 크기 줄임
+            textStyle: TextStyle(fontSize: 16),
+            side: BorderSide(color: Colors.deepPurpleAccent, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
           ),
         ),
       ),

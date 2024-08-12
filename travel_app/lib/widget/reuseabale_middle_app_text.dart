@@ -25,7 +25,7 @@ class MiddleAppText extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
           const AppText(
-            text: "더보기",
+            text: "",
             size: 14,
             color: Colors.deepPurpleAccent,
             fontWeight: FontWeight.w500,

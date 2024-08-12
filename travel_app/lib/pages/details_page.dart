@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
- 
+
 import '../models/people_also_like_model.dart';
 import '../models/tab_bar_model.dart';
 import '../widget/reuseable_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetailsPage extends StatefulWidget {
   const DetailsPage({
@@ -11,13 +15,15 @@ class DetailsPage extends StatefulWidget {
     required this.tabData,
     required this.personData,
     required this.isCameFromPersonSection,
-    required this.imageUrls, // 추가된 부분
+    required this.imageUrls,
+    required this.rating,
   });
 
   final TabBarModel? tabData;
   final PeopleAlsoLikeModel? personData;
   final bool isCameFromPersonSection;
-  final List<String> imageUrls; // 추가된 부분
+  final List<String> imageUrls;
+  final double rating;
 
   @override
   State<DetailsPage> createState() => _DetailsPageState();
@@ -26,21 +32,71 @@ class DetailsPage extends StatefulWidget {
 class _DetailsPageState extends State<DetailsPage> {
   int selected = 0;
   final EdgeInsetsGeometry padding =
-      const EdgeInsets.symmetric(horizontal: 20.0);
+  const EdgeInsets.symmetric(horizontal: 20.0);
   dynamic current;
+  bool isFavorite = false; // 하트 상태를 관리하는 변수
+
+  void _searchPlaceInMap(String placeName) async {
+    final Uri googleUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$placeName');
+    if (await canLaunchUrl(googleUrl)) {
+      await launchUrl(googleUrl);
+    } else {
+      // 에러 처리
+      print('Could not launch $googleUrl');
+    }
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    onFirstLoaded();
+    _checkIfFavorite(); // 초기 상태 설정
+  }
 
   onFirstLoaded() {
     if (widget.tabData == null) {
-      return current = widget.personData;
+      current = widget.personData;
     } else {
-      return current = widget.tabData;
+      current = widget.tabData;
     }
+  }
+
+  Future<void> _checkIfFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> favorites = prefs.getStringList('favorites') ?? [];
+
+    // 현재 페이지가 즐겨찾기에 있는지 확인
+    if (favorites.contains(current.toJson().toString())) {
+      setState(() {
+        isFavorite = true;
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> favorites = prefs.getStringList('favorites') ?? [];
+
+    if (isFavorite) {
+      // 즐겨찾기에서 제거
+      favorites.remove(jsonEncode(current.toJson()));
+    } else {
+      // 즐겨찾기에 추가
+      favorites.add(jsonEncode(current.toJson()));
+    }
+
+
+    await prefs.setStringList('favorites', favorites);
+
+    setState(() {
+      isFavorite = !isFavorite;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
-    onFirstLoaded();
     return Scaffold(
         extendBodyBehindAppBar: true,
         appBar: _buildAppBar(),
@@ -55,7 +111,7 @@ class _DetailsPageState extends State<DetailsPage> {
                 right: 0,
                 child: Hero(
                   tag: widget.isCameFromPersonSection
-                      ? current.day
+                      ? current.description
                       : current.imageUrls[0],
                   child: Container(
                     width: size.width,
@@ -143,16 +199,16 @@ class _DetailsPageState extends State<DetailsPage> {
                             Wrap(
                               children: List.generate(5, (index) {
                                 return Icon(
-                                  index < 4 ? Icons.star : Icons.star_border,
-                                  color: index < 4 ? Colors.amber : Colors.grey,
+                                  index < widget.rating.round() ? Icons.star : Icons.star_border,
+                                  color: index < widget.rating.round() ? Colors.amber : Colors.grey,
                                 );
                               }),
                             ),
                             SizedBox(
                               width: size.width * 0.01,
                             ),
-                            const AppText(
-                              text: "(4.0)",
+                            AppText(
+                              text: "(${widget.rating.toStringAsFixed(1)})",
                               size: 15,
                               color: Colors.black54,
                               fontWeight: FontWeight.w400,
@@ -205,11 +261,11 @@ class _DetailsPageState extends State<DetailsPage> {
                                         color: selected == index
                                             ? Colors.black
                                             : const Color.fromARGB(
-                                                255, 245, 245, 245),
+                                            255, 245, 245, 245),
                                         borderRadius: BorderRadius.circular(15),
                                       ),
                                       duration:
-                                          const Duration(milliseconds: 200),
+                                      const Duration(milliseconds: 200),
                                       child: Center(
                                         child: Text(
                                           "${index + 1}",
@@ -240,10 +296,10 @@ class _DetailsPageState extends State<DetailsPage> {
                       SizedBox(height: size.height * 0.01),
                       FadeInUp(
                         delay: const Duration(milliseconds: 900),
-                        child: const AppText(
+                        child: AppText(
                           text:
-                              "y. Lorem Ipsuer since the 1500s,e specimen book.",
-                          size: 13,
+                          "${current.description}",
+                          size: 15,
                           color: Colors.black54,
                           fontWeight: FontWeight.w300,
                         ),
@@ -264,9 +320,11 @@ class _DetailsPageState extends State<DetailsPage> {
                                           width: 2),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: IconButton(
-                                    onPressed: () {},
-                                    icon: const Icon(
-                                      Icons.favorite_border,
+                                    onPressed: _toggleFavorite,
+                                    icon: Icon(
+                                      isFavorite
+                                          ? Icons.favorite // 하트 채움 아이콘
+                                          : Icons.favorite_border, // 하트 비움 아이콘
                                       color: Colors.deepPurpleAccent,
                                     ),
                                   )),
@@ -277,9 +335,11 @@ class _DetailsPageState extends State<DetailsPage> {
                                 minWidth: size.width * 0.6,
                                 height: size.height * 0.06,
                                 color: Colors.deepPurpleAccent,
-                                onPressed: () {},
+                                onPressed: () {
+                                  _searchPlaceInMap(current.title);
+                                },
                                 child: const AppText(
-                                  text: "Book Trip Now",
+                                  text: "지도에서 위치 보기",
                                   size: 16,
                                   color: Colors.white,
                                   fontWeight: FontWeight.w300,

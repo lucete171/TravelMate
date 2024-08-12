@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       QuerySnapshot visitAreaSnapshot = await FirebaseFirestore.instance
           .collection('visit_area_info')
           .where('VISIT_AREA_TYPE_CD', whereIn: typeCodes)
-          .limit(4) // 필요한 만큼의 데이터를 가져옵니다.
+          .limit(3) // 필요한 만큼의 데이터를 가져옵니다.
           .get();
 
 
@@ -89,15 +89,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         String location = doc['ROAD_NM_ADDR'] ?? doc['LOTNO_ADDR'];
         int visitAreaId = doc['VISIT_AREA_ID'];
         int visitAreaTypeCd = doc['VISIT_AREA_TYPE_CD'];
-
-        print(visitAreaTypeCd);
+        double ratings = doc['DGSTFN'];
 
         // tn_tour_photo 컬렉션에서 VISIT_AREA_ID가 일치하는 문서 가져오기
         QuerySnapshot photoSnapshot = await FirebaseFirestore.instance
             .collection('tn_tour_photo')
             .where('VISIT_AREA_ID', isEqualTo: visitAreaId)
-            .limit(3)
+            .limit(2)
             .get();
+
+        QuerySnapshot codeSnapshot = await FirebaseFirestore.instance
+            .collection('tc_codeb')
+            .where('cd_a', isEqualTo: "VIS")
+            .where('cd_b', isEqualTo: visitAreaTypeCd.toString())
+            .limit(1)
+            .get();
+
+        String description = codeSnapshot.docs[0]['cd_nm'];
+
 
         List<String> fileNames = [];
         if (photoSnapshot.docs.isNotEmpty) {
@@ -113,6 +122,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           title: title,
           location: location,
           imageUrls: imageUrls,
+          ratings : ratings,
+          description: description,
         ));
       }
 
@@ -333,6 +344,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     tabData: null,
                                     isCameFromPersonSection: true,
                                     imageUrls: [],
+                                    rating: 4.0,
                                   ),
                                 ),
                               ),
@@ -348,7 +360,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Hero(
-                                      tag: current.day,
+                                      tag: current.description,
                                       child: Container(
                                         margin: const EdgeInsets.all(8.0),
                                         width: size.width * 0.28,
@@ -394,7 +406,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                             padding: EdgeInsets.only(
                                                 top: size.height * 0.015),
                                             child: AppText(
-                                              text: "${current.day} Day",
+                                              text: "${current.description}",
                                               size: 14,
                                               color:
                                                   Colors.black.withOpacity(0.5),
@@ -488,6 +500,7 @@ class TabViewChild extends StatelessWidget {
                 tabData: current,
                 isCameFromPersonSection: false,
                 imageUrls: [],
+                rating: current.ratings,
               ),
             ),
           ),
