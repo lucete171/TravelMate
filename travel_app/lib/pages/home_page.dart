@@ -1,7 +1,11 @@
+import 'dart:math';
+
 import 'package:animate_do/animate_do.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/category_model.dart';
 import '../models/people_also_like_model.dart';
 import '../nav_pages.dart/main_wrapper.dart';
@@ -11,10 +15,9 @@ import '../models/tab_bar_model.dart';
 import '../widget/painter.dart';
 import '../widget/reuseabale_middle_app_text.dart';
 import '../nav_pages.dart/drawer_menu.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math';
+import 'travel_log_page.dart';
+import 'travel_log_detail.dart';
+import 'category_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,9 +27,79 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  List<TabBarModel> searchResults = [];
+
+  void _onSearchChanged(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        searchResults = [];
+      });
+    } else {
+      List<TabBarModel> results = await searchPlacesByName(query);
+      setState(() {
+        searchResults = results;
+      });
+    }
+  }
+
+  Future<List<TabBarModel>> searchPlacesByName(String query) async {
+    List<TabBarModel> searchResults = [];
+    try {
+      QuerySnapshot visitAreaSnapshot = await FirebaseFirestore.instance
+          .collection('visit_area_info')
+          .where('VISIT_AREA_NM', isGreaterThanOrEqualTo: query)
+          .where('VISIT_AREA_NM', isLessThanOrEqualTo: query + '\uf8ff')
+          .get();
+
+      for (var doc in visitAreaSnapshot.docs) {
+        String title = doc['VISIT_AREA_NM'] ?? 'No Name';
+        String location = doc['ROAD_NM_ADDR'] ?? doc['LOTNO_ADDR'];
+        int visitAreaId = doc['VISIT_AREA_ID'];
+        int visitAreaTypeCd = doc['VISIT_AREA_TYPE_CD'];
+        double ratings = doc['DGSTFN'];
+
+        QuerySnapshot photoSnapshot = await FirebaseFirestore.instance
+            .collection('tn_tour_photo')
+            .where('VISIT_AREA_ID', isEqualTo: visitAreaId)
+            .limit(2)
+            .get();
+
+        QuerySnapshot codeSnapshot = await FirebaseFirestore.instance
+            .collection('tc_codeb')
+            .where('cd_a', isEqualTo: "VIS")
+            .where('cd_b', isEqualTo: visitAreaTypeCd.toString())
+            .limit(1)
+            .get();
+
+        String description = codeSnapshot.docs[0]['cd_nm'];
+
+        List<String> fileNames = [];
+        for (var photoDoc in photoSnapshot.docs) {
+          String imageName = photoDoc['PHOTO_FILE_NM'] ?? 'No Image';
+          fileNames.add(imageName);
+        }
+
+        List<String> imageUrls = await getImageUrls(fileNames);
+
+        searchResults.add(TabBarModel(
+          title: title,
+          location: location,
+          imageUrls: imageUrls,
+          ratings: ratings,
+          description: description,
+        ));
+      }
+    } catch (e) {
+      print("Error searching places: $e");
+    }
+
+    return searchResults;
+  }
+
+
   late final TabController tabController;
   final EdgeInsetsGeometry padding =
-      const EdgeInsets.symmetric(horizontal: 10.0);
+  const EdgeInsets.symmetric(horizontal: 10.0);
   bool isLoading = true;
   List<TabBarModel> places = [];
   List<TabBarModel> inspiration = [];
@@ -65,7 +138,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
     return imageUrls;
   }
-
 
   void fetchData() async {
     await fetchCategoryData(places, [1, 2, 3, 12]);
@@ -185,6 +257,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       padding: EdgeInsets.only(
                           bottom: size.height * 0.01, top: size.height * 0.02),
                       child: TextField(
+                        onChanged: _onSearchChanged,
                         style: GoogleFonts.ubuntu(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
@@ -224,6 +297,38 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   FadeInUp(
+                    delay: const Duration(milliseconds: 700),
+                    child: searchResults.isEmpty
+                        ? Text("검색 결과가 없습니다.")
+                        : Container(
+                      height: size.height * 0.4,
+                      child: ListView.builder(
+                        itemCount: searchResults.length,
+                        itemBuilder: (context, index) {
+                          TabBarModel current = searchResults[index];
+                          return ListTile(
+                            title: Text(current.title),
+                            subtitle: Text(current.location),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailsPage(
+                                    personData: null,
+                                    tabData: current,
+                                    isCameFromPersonSection: false,
+                                    imageUrls: current.imageUrls,
+                                    rating: current.ratings,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  FadeInUp(
                     delay: const Duration(milliseconds: 600),
                     child: Container(
                       margin: const EdgeInsets.only(top: 10.0),
@@ -232,7 +337,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         alignment: Alignment.centerLeft,
                         child: TabBar(
                           overlayColor:
-                              MaterialStateProperty.all(Colors.transparent),
+                          MaterialStateProperty.all(Colors.transparent),
                           labelPadding: EdgeInsets.only(
                               left: size.width * 0.05,
                               right: size.width * 0.05),
@@ -284,20 +389,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       width: size.width,
                       height: size.height * 0.12,
                       child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: categoryComponents.length,
-                          physics: const BouncingScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            Category current = categoryComponents[index];
-                            return Column(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categoryComponents.length,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          Category current = categoryComponents[index];
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CategoryDetailPage(category: current),
+                                ),
+                              );
+                            },
+                            child: Column(
                               children: [
                                 Container(
                                   margin: const EdgeInsets.all(10.0),
                                   width: size.width * 0.16,
                                   height: size.height * 0.07,
                                   decoration: BoxDecoration(
-                                    color: Colors.deepPurpleAccent
-                                        .withOpacity(0.2),
+                                    color: Colors.deepPurpleAccent.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                   child: Padding(
@@ -314,115 +427,172 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   size: 14,
                                   color: Colors.black,
                                   fontWeight: FontWeight.w400,
-                                )
+                                ),
                               ],
-                            );
-                          }),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
+                  // 트래블러 스토리 섹션을 예쁘게 배치한 코드
                   FadeInUp(
-                      delay: const Duration(milliseconds: 1000),
-                      child: const MiddleAppText(text: "Traveler Stories")),
+                    delay: const Duration(milliseconds: 1000),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, // 아이콘과 텍스트 사이에 공간 배치
+                      children: [
+                        const MiddleAppText(
+                          text: "Traveler Stories",
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.edit,
+                            color: Colors.deepPurpleAccent,
+                            size: 28, // 아이콘 크기 조절
+                          ),
+                          onPressed: () {
+                            // 여행 기록 작성 페이지로 이동
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TravelLogPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
                   FadeInUp(
                     delay: const Duration(milliseconds: 1100),
                     child: Container(
                       margin: EdgeInsets.only(top: size.height * 0.01),
                       width: size.width,
                       height: size.height * 0.68,
-                      child: ListView.builder(
-                          itemCount: peopleAlsoLikeModel.length,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            PeopleAlsoLikeModel current =
-                                peopleAlsoLikeModel[index];
-                            return GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DetailsPage(
-                                    personData: current,
-                                    tabData: null,
-                                    isCameFromPersonSection: true,
-                                    imageUrls: [],
-                                    rating: 4.0,
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('travel_logs')
+                            .orderBy('timestamp', descending: true)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return Center(child: CircularProgressIndicator());
+                          }
+
+                          final logs = snapshot.data!.docs;
+
+                          return ListView.builder(
+                            itemCount: logs.length,
+                            physics: const BouncingScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              var log = logs[index];
+                              var timestamp = log['timestamp'] as Timestamp;
+                              var date = timestamp.toDate();
+
+                              return GestureDetector(
+                                onTap: () {
+                                  // 여행 기록의 상세 페이지로 이동하는 코드
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TravelLogDetailPage(
+                                        imageUrls: log['imageUrls'],
+                                        rating: log['rating'],
+                                        review: log['review'],
+                                        placeName: log['placeName'],
+                                        timestamp: date,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 8.0), // 간격 추가
+                                  padding: const EdgeInsets.all(10.0), // 패딩 추가
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.3),
+                                        spreadRadius: 2,
+                                        blurRadius: 5,
+                                        offset: Offset(0, 3), // 그림자 위치 조정
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                              child: Container(
-                                margin: const EdgeInsets.all(8.0),
-                                width: size.width,
-                                height: size.height * 0.15,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Hero(
-                                      tag: current.description,
-                                      child: Container(
-                                        margin: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
                                         width: size.width * 0.28,
+                                        height: size.height * 0.15, // 고정된 높이
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(15),
+                                          borderRadius: BorderRadius.circular(15),
                                           image: DecorationImage(
-                                            image: AssetImage(
-                                              current.image,
-                                            ),
+                                            image: NetworkImage(log['imageUrls'][0]), // 첫 번째 이미지 사용
                                             fit: BoxFit.cover,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                          left: size.width * 0.02),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          SizedBox(
-                                            height: size.height * 0.035,
-                                          ),
-                                          AppText(
-                                            text: current.title,
-                                            size: 17,
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                          SizedBox(
-                                            height: size.height * 0.005,
-                                          ),
-                                          AppText(
-                                            text: current.location,
-                                            size: 14,
-                                            color:
-                                                Colors.black.withOpacity(0.5),
-                                            fontWeight: FontWeight.w300,
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.only(
-                                                top: size.height * 0.015),
-                                            child: AppText(
-                                              text: "${current.description}",
-                                              size: 14,
-                                              color:
-                                                  Colors.black.withOpacity(0.5),
-                                              fontWeight: FontWeight.w300,
+                                      SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              log['placeName'], // 장소 이름 추가
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.deepPurpleAccent,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Icon(Icons.star, color: Colors.amber, size: 16),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  '별점: ${log['rating']}',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              log['review'],
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.black.withOpacity(0.7),
+                                              ),
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              '${date.year}-${date.month}-${date.day}', // 타임스탬프 출력
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),

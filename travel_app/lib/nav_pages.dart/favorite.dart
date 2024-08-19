@@ -69,7 +69,7 @@ class FavoritePage extends StatelessWidget {
                   height: size.height * 0.68,
                   child: ListView.builder(
                     itemCount: peopleAlsoLikeModel.length,
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
                       PeopleAlsoLikeModel current = peopleAlsoLikeModel[index];
                       return GestureDetector(

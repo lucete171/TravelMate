@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../data/user.dart';
 
 class SignUpWithEmailPage extends StatefulWidget {
@@ -18,103 +17,163 @@ class _SignUpWithEmailPage extends State<SignUpWithEmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('이메일로 회원 가입'),
+        backgroundColor: Colors.deepPurpleAccent, // 보라색으로 배경색 변경
       ),
-      body: Padding(
+      body: Container(
+        width: size.width,
+        height: size.height,
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
-                  suffixIcon: Icon(Icons.check),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurpleAccent, Colors.purpleAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: size.width * 0.9, // 박스 너비를 화면의 90%로 설정
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  spreadRadius: 5,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
                 ),
-                validator: (value) {
-                  if(value!.isEmpty) {
-                    return '이메일을 입력하세요.';
-                  }
-                  return null;
-                },
+              ],
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Center(
+                    child: Text(
+                      '회원 가입',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurpleAccent,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: '이메일',
+                      labelStyle: TextStyle(color: Colors.deepPurpleAccent),
+                      prefixIcon: Icon(Icons.email, color: Colors.deepPurpleAccent),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return '이메일을 입력하세요.';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: '비밀번호',
+                      labelStyle: TextStyle(color: Colors.deepPurpleAccent),
+                      prefixIcon: Icon(Icons.lock, color: Colors.deepPurpleAccent),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return '비밀번호를 입력하세요.';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    decoration: InputDecoration(
+                      labelText: '비밀번호 확인',
+                      labelStyle: TextStyle(color: Colors.deepPurpleAccent),
+                      prefixIcon: Icon(Icons.lock, color: Colors.deepPurpleAccent),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return '비밀번호를 확인하세요.';
+                      }
+                      if (value != _passwordController.text) {
+                        return '비밀번호가 맞지 않습니다.';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 24),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          Get.back(
+                            result: CraftyUser(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurpleAccent,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 50.0,
+                          vertical: 15.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      child: Text(
+                        '가입하기',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: '비밀번호',
-                  prefixIcon: Icon(Icons.password),
-                  suffixIcon: Icon(Icons.check),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if(value!.isEmpty) {
-                    return '비밀번호를 입력하세요.';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: '비밀번호 확인',
-                  prefixIcon: Icon(Icons.password),
-                  suffixIcon: Icon(Icons.check),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if(value!.isEmpty){
-                    return '비밀번호를 확인하세요.';
-                  }
-                  if(value != _passwordController.text){
-                    return '비밀번호가 맞지 않습니다.';
-                  }
-                  return null;
-                },
-              ),
-              Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if(_formKey.currentState!.validate()) {
-                      Get.back(
-                        result: CraftyUser(
-                            email: _emailController.text.trim(),
-                            password: _passwordController.text.trim()));
-                    }
-                  },
-                  child: Text('Sign up'),
-                ),
-              )
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

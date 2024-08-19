@@ -67,7 +67,7 @@ class _DetailsPageState extends State<DetailsPage> {
     final List<String> favorites = prefs.getStringList('favorites') ?? [];
 
     // 현재 페이지가 즐겨찾기에 있는지 확인
-    if (favorites.contains(current.toJson().toString())) {
+    if (favorites.contains(jsonEncode(current.toJson()))) {
       setState(() {
         isFavorite = true;
       });
@@ -85,7 +85,6 @@ class _DetailsPageState extends State<DetailsPage> {
       // 즐겨찾기에 추가
       favorites.add(jsonEncode(current.toJson()));
     }
-
 
     await prefs.setStringList('favorites', favorites);
 
@@ -115,7 +114,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       : current.imageUrls[0],
                   child: Container(
                     width: size.width,
-                    height: size.height * 0.45,
+                    height: size.height * 0.6,
                     child: PageView.builder(
                       itemCount: current.imageUrls.length,
                       itemBuilder: (context, index) {
@@ -139,7 +138,7 @@ class _DetailsPageState extends State<DetailsPage> {
                 child: Container(
                   padding: padding,
                   width: size.width,
-                  height: size.height * 0.58,
+                  height: size.height * 0.45,
                   decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.only(
@@ -217,72 +216,6 @@ class _DetailsPageState extends State<DetailsPage> {
                         ),
                       ),
                       SizedBox(height: size.height * 0.03),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 400),
-                        child: const AppText(
-                          text: "People",
-                          size: 24,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: size.height * 0.002),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 500),
-                        child: const AppText(
-                          text: "Number of people in your group",
-                          size: 14,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 600),
-                        child: Container(
-                          margin: EdgeInsets.only(top: size.height * 0.01),
-                          width: size.width * 0.9,
-                          height: size.height * 0.08,
-                          child: ListView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 7,
-                              itemBuilder: (ctx, index) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      selected = index;
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10.0),
-                                    child: AnimatedContainer(
-                                      width: size.width * 0.12,
-                                      decoration: BoxDecoration(
-                                        color: selected == index
-                                            ? Colors.black
-                                            : const Color.fromARGB(
-                                            255, 245, 245, 245),
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      duration:
-                                      const Duration(milliseconds: 200),
-                                      child: Center(
-                                        child: Text(
-                                          "${index + 1}",
-                                          style: TextStyle(
-                                              fontSize: 17,
-                                              fontWeight: FontWeight.w500,
-                                              color: selected == index
-                                                  ? Colors.white
-                                                  : Colors.black),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }),
-                        ),
-                      ),
                       SizedBox(height: size.height * 0.02),
                       FadeInUp(
                         delay: const Duration(milliseconds: 800),

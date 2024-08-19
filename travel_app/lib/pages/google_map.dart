@@ -64,47 +64,61 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Google Map with Place Search'),
+        title: Text('Google Map'),
+        backgroundColor: Colors.deepPurpleAccent, // 앱바 색상 변경
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TypeAheadField(
-              textFieldConfiguration: TextFieldConfiguration(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: '장소 검색',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.all(16.0), // 패딩 추가
+            child: Material(
+              elevation: 5.0, // 그림자 효과 추가
+              borderRadius: BorderRadius.circular(12.0), // 모서리 둥글게
+              child: TypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: '장소 검색',
+                    prefixIcon: Icon(Icons.search, color: Colors.deepPurpleAccent), // 검색 아이콘 추가
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white, // 텍스트 필드 배경색 변경
                   ),
+                  style: TextStyle(fontSize: 16.0), // 텍스트 스타일 변경
                 ),
+                suggestionsCallback: (pattern) async {
+                  return await _getPlaceSuggestions(pattern);
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    leading: Icon(Icons.place, color: Colors.deepPurpleAccent), // 아이콘 추가
+                    title: Text(suggestion.toString()),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  _searchController.text = suggestion.toString();
+                  _searchPlace(suggestion.toString());
+                },
               ),
-              suggestionsCallback: (pattern) async {
-                return await _getPlaceSuggestions(pattern);
-              },
-              itemBuilder: (context, suggestion) {
-                return ListTile(
-                  title: Text(suggestion.toString()),
-                );
-              },
-              onSuggestionSelected: (suggestion) {
-                _searchController.text = suggestion.toString();
-                _searchPlace(suggestion.toString());
-              },
             ),
           ),
           Expanded(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _initialCenter,
-                zoom: 11.0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)), // 상단 모서리 둥글게
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _initialCenter,
+                  zoom: 11.0,
+                ),
+                mapType: MapType.normal, // 지도 타입 설정
+                zoomGesturesEnabled: true, // 확대/축소 제스처 활성화
+                rotateGesturesEnabled: true, // 지도 회전 제스처 활성화
+                markers: _markers, // 마커 추가
               ),
-              mapType: MapType.normal, // 지도 타입 설정
-              zoomGesturesEnabled: true, // 확대/축소 제스처 활성화
-              rotateGesturesEnabled: true, // 지도 회전 제스처 활성화
-              markers: _markers, // 마커 추가
             ),
           ),
         ],

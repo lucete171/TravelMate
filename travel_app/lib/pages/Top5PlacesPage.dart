@@ -9,7 +9,7 @@ Future<String?> fetchImageUrl(String query) async {
   final searchEngineId = '95c78552f9185462d'; // Custom Search Engine ID를 여기에 입력하세요.
 
   final url =
-      'https://www.googleapis.com/customsearch/v1?q=jeju $query&searchType=image&key=$apiKey&cx=$searchEngineId&num=1';
+      'https://www.googleapis.com/customsearch/v1?q=jeju+$query&searchType=image&key=$apiKey&cx=$searchEngineId&num=1';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -52,17 +52,15 @@ class _Top5PlacesPageState extends State<Top5PlacesPage>
     super.initState();
   }
 
-
   void _onRecommendRoutePressed() {
     // Map<String, List<Place>>를 List<List<Place>>로 변환
     List<List<Place>> placesByDay = widget.top5Data.values.toList();
 
     // RouteMapPage로 변환된 데이터 전달
-    Get.to(RouteMapPage(placesByDay: placesByDay));
+    Get.to(RouteMapPage());
 
     print('동선 추천 받기 버튼이 눌렸습니다.');
   }
-
 
   @override
   void dispose() {
@@ -111,10 +109,10 @@ class _Top5PlacesPageState extends State<Top5PlacesPage>
             child: TabBarView(
               controller: tabController,
               children: [
-                Top5List(places: widget.top5Data['식당'] ?? []),
-                Top5List(places: widget.top5Data['카페'] ?? []),
-                Top5List(places: widget.top5Data['여행지'] ?? []),
-                Top5List(places: widget.top5Data['숙소'] ?? []),
+                Top5List(places: widget.top5Data['식당'] ?? [], category: '식당'),
+                Top5List(places: widget.top5Data['카페'] ?? [], category: '카페'),
+                Top5List(places: widget.top5Data['여행지'] ?? [], category: '여행지'),
+                Top5List(places: widget.top5Data['숙소'] ?? [], category: '숙소'),
               ],
             ),
           ),
@@ -142,10 +140,26 @@ class _Top5PlacesPageState extends State<Top5PlacesPage>
   }
 }
 
+String _getDefaultImage(String category) {
+  switch (category) {
+    case '식당':
+      return 'assets/images/default_restaurant.png';
+    case '카페':
+      return 'assets/images/default_cafe.png';
+    case '여행지':
+      return 'assets/images/default_place.png';
+    case '숙소':
+      return 'assets/images/default_accommodation.png';
+    default:
+      return 'assets/images/default_placeholder.png'; // 기본 이미지가 없을 때 사용하는 이미지
+  }
+}
+
 class Top5List extends StatelessWidget {
   final List<Place> places;
+  final String category; // 카테고리 추가
 
-  const Top5List({required this.places});
+  const Top5List({required this.places, required this.category});
 
   @override
   Widget build(BuildContext context) {
@@ -172,9 +186,12 @@ class Top5List extends StatelessWidget {
                       Expanded(
                         child: Container(
                           width: double.infinity,
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(Icons.image, size: 50), // 기본 아이콘 사용
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            image: DecorationImage(
+                              image: AssetImage(_getDefaultImage(category)), // 기본 이미지 표시
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
@@ -241,8 +258,6 @@ class Top5List extends StatelessWidget {
     );
   }
 }
-
-
 
 class Place {
   final String name;
