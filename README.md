@@ -7,7 +7,7 @@
 
 ## app demo
 
-![앱 애니메이션](assets/animation/1.gif)
+![앱 애니메이션](https://github.com/lucete171/TravelMate/blob/main/travel_app/assets/animation/1.gif)
 
 
 
