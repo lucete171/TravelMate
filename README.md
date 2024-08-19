@@ -5,10 +5,12 @@
 ![Screenshot 2023-10-24 at 5 18 57 PM](https://github.com/AmirBayat0/Flutter-Travel-App/assets/91388754/620b07bc-18d2-4d84-92e1-6e777ecd269d)
 ![Screenshot 2023-10-24 at 5 19 53 PM](https://github.com/AmirBayat0/Flutter-Travel-App/assets/91388754/c0fec05b-0f4e-4854-aaae-dfa8c7b9f171)
 
-## app demo
+## App Demo
 
-![앱 애니메이션](https://github.com/lucete171/TravelMate/blob/main/travel_app/assets/animation/1.gif)
-(https://github.com/lucete171/TravelMate/blob/main/travel_app/assets/animation/6.gif)
+<p align="center">
+  <img src="https://github.com/lucete171/TravelMate/blob/main/travel_app/assets/animation/1.gif" width="45%" />
+  <img src="https://github.com/lucete171/TravelMate/blob/main/travel_app/assets/animation/6.gif" width="45%" />
+</p>
 
 
 
