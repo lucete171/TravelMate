@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
+
 class Category {
   final String name;
   final String image;
-  
 
-  Category({required this.name, required this.image,});
+  Category({required this.name, required this.image});
 }
 
 List<Category> categoryComponents = [
@@ -12,5 +13,5 @@ List<Category> categoryComponents = [
   Category(name: "음식집", image: "assets/images/museum.png"),
   Category(name: "카페", image: "assets/images/lake.png"),
   Category(name: "놀거리", image: "assets/images/tricycle.png"),
- 
 ];
+

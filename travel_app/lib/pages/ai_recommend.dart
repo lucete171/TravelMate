@@ -30,9 +30,8 @@ class _InputFormState extends State<InputForm> {
   String? travelStyl5Text;
   String? travelStyl6Text;
 
-  DateTime? departureDate;
-  DateTime? returnDate;
-  Duration? travelDuration;
+  List<DateTime?> startTimes = [];
+  List<DateTime?> endTimes = [];
 
   bool _isAnimating = false;
 
@@ -66,12 +65,18 @@ class _InputFormState extends State<InputForm> {
     '7': '유명한 곳 매우 선호',
   };
 
+  final Map<String, IconData> iconMap = {
+    '여행 목적': Icons.flag,
+    '여행 동기': Icons.lightbulb_outline,
+    '자연 VS 도시': Icons.landscape,
+    '휴식 VS 체험': Icons.spa,
+    '유명한 VS 특별한': Icons.star_outline,
+  };
+
   Future<void> saveJsonToFile(Map<String, dynamic> jsonData) async {
-    // 앱의 문서 디렉토리 경로를 가져옵니다.
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/travel_data.json';
 
-    // 파일을 생성하고 JSON 데이터를 문자열로 변환하여 저장합니다.
     final file = File(path);
     final jsonString = jsonEncode(jsonData);
     await file.writeAsString(jsonString);
@@ -102,16 +107,16 @@ class _InputFormState extends State<InputForm> {
   }
 
   Future<void> sendData() async {
-    final String url = 'https://ec62-34-31-67-62.ngrok-free.app/list_recommend'; // 서버 URL을 입력하세요.
+    _showLoadingDialog();
+    final String url = 'https://your-server-url.com/list_recommend'; // 서버 URL을 입력하세요.
     final Map<String, dynamic> data = {
       'TRAVEL_MISSION_PRIORITY': travelMissionPriority,
       'TRAVEL_STYL_1': travelStyl1,
       'TRAVEL_STYL_5': travelStyl5,
       'TRAVEL_STYL_6': travelStyl6,
       'TRAVEL_MOTIVE_1': travelMotive1,
-      'DEPARTURE_DATE': departureDate?.toIso8601String(),
-      'RETURN_DATE': returnDate?.toIso8601String(),
-      'TRAVEL_DURATION': travelDuration?.inDays,
+      'start_time': startTimes.map((date) => date?.toIso8601String()).toList(),
+      'end_time': endTimes.map((date) => date?.toIso8601String()).toList(),
     };
 
     final response = await http.post(
@@ -119,9 +124,9 @@ class _InputFormState extends State<InputForm> {
       headers: {'Content-Type': 'application/json'},
       body: json.encode(data),
     );
+    Navigator.of(context).pop();
 
     if (response.statusCode == 200) {
-      // JSON 디코딩
       final jsonResponse = jsonDecode(response.body);
 
       List<Place> restaurants = parsePlacesFromJson(jsonResponse, '식당');
@@ -179,34 +184,79 @@ class _InputFormState extends State<InputForm> {
     });
   }
 
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true, // Dialog 밖을 눌러도 닫히지 않게 설정
+      builder: (BuildContext context) {
+        return Center(
+          child: Container(
+            width: 100,
+            height: 100,
+            child: Lottie.asset('assets/animation/ai_robot.json'),
+          ),
+        );
+      },
+    );
+  }
+
   void _playAnimation() {
     setState(() {
       _isAnimating = true;
     });
   }
 
-  Future<void> _selectDate(BuildContext context, bool isDeparture) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? pickedDateRange = await showDateRangePicker(
       context: context,
-      initialDate: isDeparture ? departureDate ?? DateTime.now() : returnDate ?? DateTime.now(),
+      initialDateRange: DateTimeRange(start: DateTime.now(), end: DateTime.now().add(Duration(days: 2))),
       firstDate: DateTime(2020),
       lastDate: DateTime(2101),
     );
-    if (picked != null && picked != (isDeparture ? departureDate : returnDate))
+
+    if (pickedDateRange != null) {
       setState(() {
-        if (isDeparture) {
-          departureDate = picked;
-          if (returnDate != null && picked.isAfter(returnDate!)) {
-            returnDate = null;
-            travelDuration = null;
-          }
-        } else {
-          returnDate = picked;
-          if (departureDate != null) {
-            travelDuration = returnDate!.difference(departureDate!);
-          }
+        startTimes.clear();
+        endTimes.clear();
+
+        final Duration range = pickedDateRange.end.difference(pickedDateRange.start);
+        for (int i = 0; i <= range.inDays; i++) {
+          final DateTime currentDate = pickedDateRange.start.add(Duration(days: i));
+          startTimes.add(DateTime(currentDate.year, currentDate.month, currentDate.day, 9, 0)); // 기본 시작 시간 09:00
+          endTimes.add(DateTime(currentDate.year, currentDate.month, currentDate.day, 18, 0)); // 기본 끝 시간 18:00
         }
       });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, int index, bool isStartTime) async {
+    final DateTime? selectedDate = startTimes[index];
+    if (selectedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: isStartTime
+            ? TimeOfDay.fromDateTime(selectedDate)
+            : TimeOfDay.fromDateTime(endTimes[index]!),
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          final DateTime updatedDateTime = DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+
+          if (isStartTime) {
+            startTimes[index] = updatedDateTime;
+          } else {
+            endTimes[index] = updatedDateTime;
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -221,58 +271,99 @@ class _InputFormState extends State<InputForm> {
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(8.0), // 패딩을 줄여서 공간 확보
+            padding: const EdgeInsets.all(8.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                _buildElevatedButton(context, '여행 목적 선택', travelMissionPriorityText, () {
-                  _navigateAndSave(context, TravelMissionPriorityPage(), 'travelMissionPriority');
-                }, travelMissionPriority != null),
-                if (travelMissionPriority != null)
-                  _buildElevatedButton(context, '여행 동기 선택', travelMotive1Text, () {
-                    _navigateAndSave(context, TravelMotivePage(), 'travelMotive1');
-                  }, travelMotive1 != null),
+                // 버튼들을 카드로 감싸고 2열로 배치
+                _buildCardRow([
+                  _buildFeatureCard(context, '여행 목적', travelMissionPriorityText, iconMap['여행 목적']!, () {
+                    _navigateAndSave(context, TravelMissionPriorityPage(), 'travelMissionPriority');
+                  }, travelMissionPriority != null),
+                  if (travelMissionPriority != null)
+                    _buildFeatureCard(context, '여행 동기', travelMotive1Text, iconMap['여행 동기']!, () {
+                      _navigateAndSave(context, TravelMotivePage(), 'travelMotive1');
+                    }, travelMotive1 != null),
+                ]),
                 if (travelMotive1 != null)
-                  _buildElevatedButton(context, '자연 VS 도시 선택', travelStyl1Text, () {
-                    _navigateAndSave(context, TravelStyl1Page(), 'travelStyl1');
-                  }, travelStyl1 != null),
-                if (travelStyl1 != null)
-                  _buildElevatedButton(context, '휴식 VS 체험 선택', travelStyl5Text, () {
-                    _navigateAndSave(context, TravelStyl5Page(), 'travelStyl5');
-                  }, travelStyl5 != null),
+                  _buildCardRow([
+                    _buildFeatureCard(context, '자연 VS 도시', travelStyl1Text, iconMap['자연 VS 도시']!, () {
+                      _navigateAndSave(context, TravelStyl1Page(), 'travelStyl1');
+                    }, travelStyl1 != null),
+                    _buildFeatureCard(context, '휴식 VS 체험', travelStyl5Text, iconMap['휴식 VS 체험']!, () {
+                      _navigateAndSave(context, TravelStyl5Page(), 'travelStyl5');
+                    }, travelStyl5 != null),
+                  ]),
                 if (travelStyl5 != null)
-                  _buildElevatedButton(context, '유명한 VS 특별한 선택', travelStyl6Text, () {
-                    _navigateAndSave(context, TravelStyl6Page(), 'travelStyl6');
-                  }, travelStyl6 != null),
-                if (travelStyl6 != null) ...[
-                  _buildDateButton(context, '출발 일시 선택', departureDate, () => _selectDate(context, true)),
-                  _buildDateButton(context, '도착 일시 선택', returnDate, () => _selectDate(context, false)),
-                  if (departureDate != null && returnDate != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          sendData();
-                          _playAnimation();
-                        },
-                        child: Text(
-                          '추천받기',
-                          style: TextStyle(color: Colors.white), // 글자 색 흰색으로 설정
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purpleAccent,
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          textStyle: TextStyle(fontSize: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                  _buildCardRow([
+                    _buildFeatureCard(context, '유명한 VS 특별한', travelStyl6Text, iconMap['유명한 VS 특별한']!, () {
+                      _navigateAndSave(context, TravelStyl6Page(), 'travelStyl6');
+                    }, travelStyl6 != null),
+                    _buildFeatureCard(context, '여행 날짜 범위 선택', null, Icons.date_range, () {
+                      _selectDateRange(context);
+                    }, true),
+                  ]),
+                // 날짜와 시간 선택 UI
+                if (startTimes.isNotEmpty)
+                  for (int i = 0; i < startTimes.length; i++)
+                    Card(
+                      margin: EdgeInsets.symmetric(vertical: 5.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      elevation: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Day ${i + 1} (${DateFormat('yyyy-MM-dd').format(startTimes[i]!)}):',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTimeButton(
+                                      context, '시작 시간 선택', startTimes[i], Icons.access_time, () => _selectTime(context, i, true)),
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildTimeButton(
+                                      context, '끝 시간 선택', endTimes[i], Icons.access_time, () => _selectTime(context, i, false)),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                ],
+                if (startTimes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        sendData();
+                      },
+                      child: Text(
+                        '추천받기',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        textStyle: TextStyle(fontSize: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (_isAnimating)
                   Container(
-                    width: size.width * 0.6, // 애니메이션 크기 조정
+                    width: size.width * 0.6,
                     height: size.width * 0.6,
                     child: Lottie.asset('assets/animation/ai_robot.json'),
                   ),
@@ -284,24 +375,47 @@ class _InputFormState extends State<InputForm> {
     );
   }
 
-  Widget _buildElevatedButton(BuildContext context, String defaultText, String? selectedText, VoidCallback onPressed, bool isSelected) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0), // 패딩을 줄여서 공간 확보
-      child: Center(
-        child: ElevatedButton(
-          onPressed: onPressed,
-          child: Text(
-            selectedText ?? defaultText,
-            style: TextStyle(fontSize: 16), // 글자 크기 줄임
+  Widget _buildCardRow(List<Widget> cards) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: cards,
+    );
+  }
+
+  Widget _buildFeatureCard(BuildContext context, String title, String? selectedText, IconData icon, VoidCallback onPressed, bool isSelected) {
+    return Card(
+      margin: EdgeInsets.all(8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      elevation: 5,
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.4,
+          padding: EdgeInsets.symmetric(vertical: 20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: isSelected ? Colors.white : Colors.deepPurpleAccent, size: 30),
+              SizedBox(height: 10),
+              Text(
+                selectedText ?? title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isSelected ? Colors.white : Colors.deepPurpleAccent,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? Colors.deepPurpleAccent : Colors.white,
-            foregroundColor: isSelected ? Colors.white : Colors.deepPurpleAccent,
-            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15), // 버튼 크기 줄임
-            textStyle: TextStyle(fontSize: 16),
-            side: BorderSide(color: Colors.deepPurpleAccent, width: 2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.deepPurpleAccent : Colors.white,
+            borderRadius: BorderRadius.circular(15.0),
+            border: Border.all(
+              color: Colors.deepPurpleAccent,
+              width: 2,
             ),
           ),
         ),
@@ -309,26 +423,28 @@ class _InputFormState extends State<InputForm> {
     );
   }
 
-  Widget _buildDateButton(BuildContext context, String text, DateTime? date, VoidCallback onPressed) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0), // 패딩을 줄여서 공간 확보
-      child: Center(
-        child: ElevatedButton(
-          onPressed: onPressed,
-          child: Text(
-            date != null ? DateFormat('yyyy-MM-dd').format(date) : text,
-            style: TextStyle(fontSize: 16), // 글자 크기 줄임
+  Widget _buildTimeButton(BuildContext context, String text, DateTime? time, IconData icon, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: time != null ? Colors.white : Colors.deepPurpleAccent),
+          SizedBox(width: 5),
+          Text(
+            time != null ? DateFormat('HH:mm').format(time) : text,
+            style: TextStyle(fontSize: 16),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: date != null ? Colors.deepPurpleAccent : Colors.white,
-            foregroundColor: date != null ? Colors.white : Colors.deepPurpleAccent,
-            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15), // 버튼 크기 줄임
-            textStyle: TextStyle(fontSize: 16),
-            side: BorderSide(color: Colors.deepPurpleAccent, width: 2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
+        ],
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: time != null ? Colors.deepPurpleAccent : Colors.white,
+        foregroundColor: time != null ? Colors.white : Colors.deepPurpleAccent,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        textStyle: TextStyle(fontSize: 16),
+        side: BorderSide(color: Colors.deepPurpleAccent, width: 2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
         ),
       ),
     );

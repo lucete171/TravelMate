@@ -19,7 +19,6 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPage extends State<SettingPage> {
   bool _notification = false;
-
   CraftyUser user = Get.find();
 
   @override
@@ -28,84 +27,100 @@ class _SettingPage extends State<SettingPage> {
     initProfile();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('설정'),
+        title: const Text(
+          '설정',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.deepPurpleAccent,
+        elevation: 0,
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 20),
-          SwitchListTile(
-              title:const Text('알림 설정'),
-              value: _notification,
-              onChanged: (value) async {
-                setState(() {
-                  _notification = value;
-                });
-                await FirebaseFirestore.instance
-                    .collection('craftyusers')
-                    .doc(user.email)
-                    .update({'noti': value});
-                final SharedPreferences preferences =
-                    await SharedPreferences.getInstance();
-                await preferences.setBool('noto', value);
-              },
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut().then((value) async {
-                  final SharedPreferences preferences =
-                      await SharedPreferences.getInstance();
-                  await preferences.remove("id");
-                  await preferences.remove("pw");
-                  Get.off(IntroPage());
-                });
-              },
-              child: Text('로그아웃'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 210, 210, 240),
+      body: Container(
+        color: Colors.grey[100],
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 20),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
               ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {Get.to(LicensePage());},
-            child: Text('라이센스'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 210, 210, 240),
+              child: SwitchListTile(
+                title: Text(
+                  '알림 설정',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+                value: _notification,
+                activeColor: Colors.deepPurpleAccent,
+                secondary: Icon(Icons.notifications_active, color: Colors.deepPurpleAccent),
+                onChanged: (value) async {
+                  setState(() {
+                    _notification = value;
+                  });
+                  await FirebaseFirestore.instance
+                      .collection('craftyusers')
+                      .doc(user.email)
+                      .update({'noti': value});
+                  final SharedPreferences preferences =
+                  await SharedPreferences.getInstance();
+                  await preferences.setBool('noto', value);
+                },
+              ),
             ),
-          ),
-        ],
-      ));
+            SizedBox(height: 20),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: ListTile(
+                leading: Icon(Icons.logout, color: Colors.redAccent),
+                title: Text(
+                  '로그아웃',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+                onTap: () async {
+                  await FirebaseAuth.instance.signOut().then((value) async {
+                    final SharedPreferences preferences =
+                    await SharedPreferences.getInstance();
+                    await preferences.remove("id");
+                    await preferences.remove("pw");
+                    Get.off(IntroPage());
+                  });
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: ListTile(
+                leading: Icon(Icons.info_outline, color: Colors.blueAccent),
+                title: Text(
+                  '라이센스',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+                onTap: () {
+                  Get.to(LicensePage());
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void initProfile() async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
-    if(mounted){
+    if (mounted) {
       setState(() {
         _notification = preferences.getBool("hobbyNoti")!;
       });
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

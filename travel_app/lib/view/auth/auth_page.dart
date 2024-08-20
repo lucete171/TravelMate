@@ -27,10 +27,9 @@ class _AuthPage extends State<AuthPage> {
 
   Future<GoogleSignInAccount?> signInWithGoogle() async {
     final GoogleSignInAccount? googleSignInAccount =
-        await googleSignIn.signIn();
+    await googleSignIn.signIn();
     final GoogleSignInAuthentication googleSignInAuthentication =
-        await googleSignInAccount!.authentication;
-
+    await googleSignInAccount!.authentication;
 
     final AuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleSignInAuthentication.accessToken,
@@ -38,7 +37,7 @@ class _AuthPage extends State<AuthPage> {
     );
 
     final UserCredential authResult =
-        await FirebaseAuth.instance.signInWithCredential(credential);
+    await FirebaseAuth.instance.signInWithCredential(credential);
     final User? user = authResult.user;
 
     if (user != null) {
@@ -57,33 +56,33 @@ class _AuthPage extends State<AuthPage> {
   void _findPassword() async {
     String email = '';
     await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('비밀번호 초기화'),
-            content: TextFormField(
-              decoration: InputDecoration(hintText: 'Enter your email'),
-              onChanged: (value) {
-                email = value;
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('비밀번호 초기화'),
+          content: TextFormField(
+            decoration: InputDecoration(hintText: 'Enter your email'),
+            onChanged: (value) {
+              email = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back();
               },
+              child: Text('Cancel'),
             ),
-            actions: [
-              TextButton(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  child: Text('Cancel'),
-              ),
-              TextButton(
-                  onPressed: () async {
-                    await _auth.sendPasswordResetEmail(email: email);
-                    Get.back();
-                  },
-                  child: Text('Confirm'),
-              ),
-            ],
-          );
-        },
+            TextButton(
+              onPressed: () async {
+                await _auth.sendPasswordResetEmail(email: email);
+                Get.back();
+              },
+              child: Text('Confirm'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -111,9 +110,9 @@ class _AuthPage extends State<AuthPage> {
             email: email, password: password);
       } else {
         final GoogleSignInAccount? googleSignInAccount =
-            await googleSignIn.signIn();
+        await googleSignIn.signIn();
         final GoogleSignInAuthentication googleSignInAuthentication =
-            await googleSignInAccount!.authentication;
+        await googleSignInAccount!.authentication;
 
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleSignInAuthentication.accessToken,
@@ -121,7 +120,7 @@ class _AuthPage extends State<AuthPage> {
         );
 
         final UserCredential authResult =
-            await FirebaseAuth.instance.signInWithCredential(credential);
+        await FirebaseAuth.instance.signInWithCredential(credential);
         user = authResult.user;
       }
 
@@ -131,7 +130,7 @@ class _AuthPage extends State<AuthPage> {
 
       var token = await FirebaseMessaging.instance.getToken();
       final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
+      await SharedPreferences.getInstance();
       await preferences.setString('id', email);
       await preferences.setString('pw', password);
       await preferences.setString('type', type.name);
@@ -139,15 +138,15 @@ class _AuthPage extends State<AuthPage> {
           .collection('craftyusers')
           .doc(email)
           .set({
-        'email' : email,
-        'fcm' : token,
-        'signType' : type.name,
-        'uid' : type == SignType.Email ? _auth.currentUser?.uid : user!.uid,
-        'noti' : true,
+        'email': email,
+        'fcm': token,
+        'signType': type.name,
+        'uid': type == SignType.Email ? _auth.currentUser?.uid : user!.uid,
+        'noti': true,
       }).then((value) {
         CraftyUser craftyUser = CraftyUser(email: email, password: password);
         craftyUser.uid =
-          (type == SignType.Email ? _auth.currentUser?.uid : user!.uid)!;
+        (type == SignType.Email ? _auth.currentUser?.uid : user!.uid)!;
         Get.lazyPut(() => craftyUser);
         Get.off(WelcomePage());
       });
@@ -175,36 +174,57 @@ class _AuthPage extends State<AuthPage> {
                 'assets/animation/travel.json',
                 width: MediaQuery.of(context).size.width / 2,
               ),
-              SizedBox(height: 20,),
+              SizedBox(height: 20),
               SignInButton(
-                  Buttons.email,
-                  text: 'Sign up with Email',
-                  onPressed: () async {
-                    CraftyUser user = await Get.to(SignUpWithEmailPage());
-                    if (user != null) {
-                      _signUp(SignType.Email, user.email, user.password);
-                    }
-                  },
-                  ),
-              SizedBox(height: 20,),
+                Buttons.email,
+                text: 'Sign up with Email',
+                onPressed: () async {
+                  CraftyUser user = await Get.to(SignUpWithEmailPage());
+                  if (user != null) {
+                    _signUp(SignType.Email, user.email, user.password);
+                  }
+                },
+              ),
+              SizedBox(height: 20),
               SignInButton(
                 Buttons.google,
                 text: 'Sign up with Google',
                 onPressed: signInWithGoogle,
               ),
-              SizedBox(height: 20,),
-              MaterialButton(
-                  onPressed: () async {
-                    CraftyUser user = await Get.to(LoginWithEmailPage());
-                    if (user != null) {
-                      _signIn(SignType.Email, user.email, user.password);
-                    }
-                  },
-                child: Text('이메일로 로그인하기'),
-              ),
+              SizedBox(height: 20),
               ElevatedButton(
-                  onPressed: _findPassword,
-                  child: Text('비밀번호 찾기'),
+                onPressed: () async {
+                  CraftyUser user = await Get.to(LoginWithEmailPage());
+                  if (user != null) {
+                    _signIn(SignType.Email, user.email, user.password);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding:
+                  EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                child: Text(
+                  '이메일로 로그인하기',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _findPassword,
+                style: ElevatedButton.styleFrom(
+                  padding:
+                  EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                child: Text(
+                  '비밀번호 찾기',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ],
           ),
